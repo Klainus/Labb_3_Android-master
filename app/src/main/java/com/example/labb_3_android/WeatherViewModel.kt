@@ -1,5 +1,6 @@
 package com.example.labb_3_android
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,7 @@ class WeatherViewModel @Inject constructor(
             }
 
             result.onFailure { exception ->
+                Log.e("WeatherViewModel", "Error fetching weather", exception)
                 _errorMessage.value = "Failed to fetch data: ${exception.localizedMessage}"
                 _temperature.value = ""
             }

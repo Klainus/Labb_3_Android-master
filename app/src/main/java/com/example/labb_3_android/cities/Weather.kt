@@ -8,6 +8,7 @@ data class Weather(
     val date: String,
     val temperature: String,
     val description: String,
+    val iconCode: String
 ) {
     @PrimaryKey(autoGenerate = true)
     var id: Long? = null

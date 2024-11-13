@@ -11,24 +11,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.lifecycleScope
 import com.example.labb_3_android.ui.theme.Labb_3_AndroidTheme
-import com.example.labb_3_android.WeatherScreen
-import com.example.labb_3_android.cities.WeatherDao
-import com.example.labb_3_android.cities.WeatherDatabase
-import com.example.labb_3_android.cities.WeatherRepository
-import kotlinx.coroutines.coroutineScope
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val weatherViewModel: WeatherViewModel by viewModels()
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val db = WeatherDatabase.getInstance(applicationContext)
-        weatherRepository = WeatherRepository(db, lifecycleScope)
 
         setContent {
             Labb_3_AndroidTheme {
@@ -39,12 +32,15 @@ class MainActivity : ComponentActivity() {
 
                 val temperature by weatherViewModel.temperature
                 val errorMessage by weatherViewModel.errorMessage
+                val weatherDescription by weatherViewModel.weatherDescription
+                val weatherIcon by weatherViewModel.weatherIcon
+
+                val iconResource = if (errorMessage.isEmpty()) weatherIcon else R.drawable.unknown_weather
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     WeatherScreen(
                         cityName = "Stockholm",
-                        temperature = if (errorMessage.isEmpty()) temperature else errorMessage,
-                        weatherIcon = R.drawable.unknown_weather,
+                        viewModel = weatherViewModel,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

@@ -1,21 +1,19 @@
 package com.example.labb_3_android
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.labb_3_android.api.WeatherResponse
-import com.example.labb_3_android.api.WeatherService
-import com.example.labb_3_android.cities.Weather
-import com.example.labb_3_android.cities.WeatherDao
 import com.example.labb_3_android.cities.WeatherRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import retrofit2.*
-import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Inject
 
-class WeatherViewModel(
+@HiltViewModel
+class WeatherViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _temperature = mutableStateOf("Loading...")
     val temperature: State<String> = _temperature
@@ -23,14 +21,12 @@ class WeatherViewModel(
     private val _errorMessage = mutableStateOf("Loading...")
     val errorMessage: State<String> = _errorMessage
 
-    private val _weatherIcon = mutableStateOf(0)
+    private val _weatherIcon = mutableIntStateOf(0)
     val weatherIcon: State<Int> = _weatherIcon
 
-    private val weatherService = Retrofit.Builder()
-        .baseUrl("https://api.openweathermap.org/")
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-        .create(WeatherService::class.java)
+    private val _weatherDescription = mutableStateOf("Loading...")
+    val weatherDescription: State<String> = _weatherDescription
+
 
     private fun getIconResource(iconCode: String): Int {
         return when (iconCode) {
@@ -46,40 +42,21 @@ class WeatherViewModel(
     }
 
     fun fetchWeather(city: String, apiKey: String) {
-        weatherService.getWeather(city, apiKey).enqueue(object : Callback<WeatherResponse> {
-            override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-                if (response.isSuccessful) {
-                    response.body()?.let { weatherResponse ->
-                        val temp = weatherResponse.main.temp
-                        _temperature.value = "Current temperature: $temp°C"
-                        _errorMessage.value = ""
+        viewModelScope.launch {
+            val result = weatherRepository.syncWeatherDataFromAPI(city, apiKey)
 
-                        val iconCode = weatherResponse.weather[0].icon
-                        _weatherIcon.value = getIconResource(iconCode)
-
-                        saveWeatherToLocalDatabase(city, temp, iconCode)
-                    }
-                } else {
-                    _errorMessage.value = "Error: ${response.message()}"
-                    _temperature.value = ""
-                }
+            result.onSuccess { weather ->
+                _temperature.value = "Current temperature: ${weather.temperature}°C"
+                _weatherDescription.value = "Description: ${weather.description}"
+                _weatherIcon.value = getIconResource(weather.iconCode)
+                _errorMessage.value = ""
             }
 
-            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                _errorMessage.value = "Failed to fetch data: ${t.localizedMessage}"
+            result.onFailure { exception ->
+                _errorMessage.value = "Failed to fetch data: ${exception.localizedMessage}"
                 _temperature.value = ""
             }
-        })
-    }
-
-    private fun saveWeatherToLocalDatabase(city: String, temp: Double, iconCode: String) {
-        viewModelScope.launch {
-            val weather = Weather(
-                date = System.currentTimeMillis().toString(),
-                temperature = temp.toString(),
-                description = iconCode
-            )
-
         }
     }
 }
+

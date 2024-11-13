@@ -2,12 +2,13 @@ package com.example.labb_3_android.cities
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WeatherDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWeather(weather: Weather)
 
     @Query("SELECT * FROM weather")

@@ -13,11 +13,11 @@ import javax.inject.Singleton
 
 interface WeatherService {
     @GET("data/2.5/weather")
-    fun getWeather(
+    suspend fun getWeather(
         @Query("q") city: String,
         @Query("appid") apiKey: String,
         @Query("units") units: String = "metric"
-    ): Call<WeatherResponse>
+    ): WeatherResponse
 }
 
 @Module
